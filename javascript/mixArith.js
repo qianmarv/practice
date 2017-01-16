@@ -1,3 +1,4 @@
+// Incredental Replace expression
 function xxx(sExp){
     sExp = sExp.replace(/ /g,""); // remove blank
     var reNum    = /<NUM\>|([\-]?\d+[\.\d+]?)/;
@@ -74,29 +75,6 @@ function test(expr){
 
 // Possible State:
 // { N: operand, O: operator, L: Left parenthesis, R: Right paren}
-
-var [oNum, oOpr, oLp, oRp] = [
-    {key:"N", re:/^[\-]?(\d+)(\.\d+)?/},
-    {key:"O", re:/^\+\-\*\//},
-    {key:"L", re:/^\(/},
-    // {key:"R", re:/^\)/},
-];
-function matchingRightParen(sStr){
-    var count = 1;
-    for (var i=1,len=sStr.length; i<=len; i++){
-        if(count === 0){
-            return [sStr.slice(1,i-1),sStr.slice(i, len)];
-        }
-        if(sStr[i] === '(') count++;
-        if(sStr[i] === ')') count--;
-    }
-    // throw exception
-    return ""; // failed maching
-}
-
-
-
-
 function buildBTree(sStr, aNextStates=["N", "("], aResult=[]){
     let oState = {
         "N":/^[\-]?(\d+)(\.\d+)?/,
@@ -151,53 +129,7 @@ function calc(sExpr){
     console.log(LDR(buildBTree(sExpr.replace(/ /g,""))));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Without Regular Expression
 function getToken(sExpr, tokenType, sToken="", i=0){
     switch(tokenType){
         case 'N':
@@ -299,3 +231,7 @@ function MDRDraw(aTree, iDeepth = 0){
 // -
 // 3
 //
+
+// Finit Automata
+function FA(sExpr){
+}
