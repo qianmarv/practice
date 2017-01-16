@@ -1,3 +1,4 @@
+// steal from http://techslides.com/demos/convert-csv-json.html
 function csvJSON(csv){
     var lines=csv.split("\n");
     var result = [];
