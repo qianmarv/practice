@@ -110,10 +110,10 @@ function buildBTree(sStr, aNextStates=["N", "("], aResult=[]){
                 if(iLen>3){
                     let [preOpr,curOpr] = [aResult[iLen-3], aResult[iLen-1]];
                     if((curOpr === "*"||curOpr === "/") && (preOpr === "+"||preOpr === "-")){  //Draw back for high priority operator
-                        vOpr = [ aResult[iLen-2] , aResult[aResult.length-1], vOpr ];
+                       vOpr = [ aResult[iLen-2] , aResult[aResult.length-1], vOpr ];
                         aResult = aResult.slice(0, iLen-2); // draw back
                     } else { // Promote
-                        aResult = [aResult.slice(0,iLen-1), curOpr];
+                       aResult = [aResult.slice(0,iLen-1), curOpr];
                     }
                 }
             }
@@ -234,4 +234,14 @@ function MDRDraw(aTree, iDeepth = 0){
 
 // Finit Automata
 function FA(sExpr){
+}
+
+// PF Test
+function pf(sExpr, times){
+    let start = Date.now();
+    for(let i=0; i<times; i++){
+        calc(sExpr);
+    }
+    let end = Date.now();
+    console.log("Runtime(ms)`: "+(end-start).toString());
 }
