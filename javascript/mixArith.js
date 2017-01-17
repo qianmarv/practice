@@ -125,9 +125,30 @@ function buildBTree(sStr, aNextStates=["N", "("], aResult=[]){
     return sSub === "" ? aResult: buildBTree(sSub, aNewStates, aResult);
 }
 
+function LDR(aTree){
+    return !Array.isArray(aTree) ? Number(aTree) :
+        function(l, op, r) {
+            switch(op){
+            case "+": return l + r;
+            case "-": return l - r;
+            case "*": return l * r;
+            case "/": return l / r;
+            default:  return NaN;
+            }
+        }(LDR(aTree[0]), aTree[1], LDR(aTree[2]));
+};
+
+
 function calc(sExpr){
     console.log(LDR(buildBTree(sExpr.replace(/ /g,""))));
 }
+
+/*
+ *Another Implmentation without using Regular Expression
+ *
+ *
+ *
+ */
 
 // Without Regular Expression
 function getToken(sExpr, tokenType, sToken="", i=0){
@@ -155,6 +176,56 @@ function getToken(sExpr, tokenType, sToken="", i=0){
     }
     return sToken === "" ? [] : [sToken, sExpr.slice(i, sExpr.length)];
 }
+function calculator(l, op, r){
+    l = Number(l);
+    r = Number(r);
+    switch(op){
+    case "+": return l + r;
+    case "-": return l - r;
+    case "*": return l * r;
+    case "/": return l / r;
+    default:  return NaN;
+    }
+}
+
+function buildSmartTree(sStr, aNextStates=["N", "("], aResult=[]) {
+    let aNewStates, vOpr, sSub;
+    let oPri = {
+        "+" : 1,
+        "-" : 1,
+        "*" : 5,
+        "/" : 5
+    };
+    for (let i = 0; i < aNextStates.length; i++) { // Check Next Possible State
+        let sState = aNextStates[i];
+        [vOpr, sSub] = getToken(sStr, sState);
+        if(vOpr) {
+            if (sState === "O") aNewStates = ["N", "("];  // Operator
+            else {  // Operand
+                aNewStates = ["O"];
+                if (sState === "(") vOpr = buildSmartTree(vOpr);
+                if (aResult.length > 3) {
+                    let [iLen, preOpr,curOpr] = [aResult.length, aResult[aResult.length - 3], aResult[aResult.length - 1]];
+                    if (oPri[curOpr] > oPri[preOpr]) {  //Draw back for high priority operator
+                        // Could be Calcuated now
+                        vOpr = calculator(aResult[iLen - 2], aResult[aResult.length - 1], vOpr);
+                        aResult = aResult.slice(0, iLen - 2);          // Draw back
+                    } else {
+                        aResult = [calculator(aResult[0], aResult[1], aResult[2]), curOpr];  //Promote
+                    }
+                }
+            }
+            aResult.push(vOpr);
+            break; // Match once
+        }
+    }
+    if(!aNewStates) return [];  //not in loop, invalid expression
+    return sSub === "" ? calculator(aResult[0], aResult[1], aResult[2]): buildSmartTree(sSub, aNewStates, aResult);
+}
+function calc3(sExpr){
+    console.log(buildSmartTree(sExpr.replace(/ /g,"")));
+}
+
 function buildBTreeWOReg(sStr, aNextStates=["N", "("], aResult=[]) {
     let aNewStates, vOpr, sSub;
     for (let i = 0; i < aNextStates.length; i++) { // Check Next Possible State
@@ -166,34 +237,22 @@ function buildBTreeWOReg(sStr, aNextStates=["N", "("], aResult=[]) {
                 aNewStates = ["O"];
                 if (sState === "(") vOpr = buildBTreeWOReg(vOpr);
                 if (aResult.length > 3) {
-                    let [iLen, preOpr,curOpr] = [aResult.length, aResult[iLen - 3], aResult[iLen - 1]];
+                    let [iLen, preOpr,curOpr] = [aResult.length, aResult[aResult.length - 3], aResult[aResult.length - 1]];
                     if ((curOpr === "*" || curOpr === "/") && (preOpr === "+" || preOpr === "-")) {  //Draw back for high priority operator
-                        Opr = [aResult[iLen - 2], aResult[aResult.length - 1], vOpr];
+                        vOpr = [aResult[iLen - 2], aResult[aResult.length - 1], vOpr];
                         aResult = aResult.slice(0, iLen - 2);          // Draw back
                     } else {
                         aResult = [aResult.slice(0, iLen - 1), curOpr];  //Promote
                     }
                 }
-                aResult.push(vOpr);
             }
+            aResult.push(vOpr);
             break; // Match once
         }
     }
     if(!aNewStates) return [];  //not in loop, invalid expression
-    return sSub === "" ? aResult: buildBTree(sSub, aNewStates, aResult);
+    return sSub === "" ? aResult: buildBTreeWOReg(sSub, aNewStates, aResult);
 }
-function LDR(aTree){
-    return !Array.isArray(aTree) ? Number(aTree) :
-        function(l, op, r) {
-            switch(op){
-            case "+": return l + r;
-            case "-": return l - r;
-            case "*": return l * r;
-            case "/": return l / r;
-            default:  return NaN;
-            }
-        }(LDR(aTree[0]), aTree[1], LDR(aTree[2]));
-};
 function calc2(sExpr){
     console.log(LDR(buildBTreeWOReg(sExpr.replace(/ /g,""))));
 }
@@ -232,6 +291,96 @@ function MDRDraw(aTree, iDeepth = 0){
 // 3
 //
 
+/*
+ *
+ * Scan Express String
+ * 1. Treat paren as whole part equal to operand & do recuisive
+ * 2. Build Tree, while calculating next operator, check priority
+ *    If second pri. is low, then do the calc, else calc second part back to 1
+ * 3. If string is empty, finish the loop/recuisive
+ */
+// Without Regular Expression
+function mixCalc(sExpr){
+    let currState, token;
+    for (let i=0, iLen=sExpr.length; i<iLen; i++){
+        if(!isNaN(sExpr[i])){ //Number
+            for (let j=0; j<iLen && !isNaN(sExpr[j]); j++){ //TODO Support float
+            }
+            token = sExpr.substring(i,j);
+        } else if(sExpr[i] === '*' || sExpr[i] === '/' || sExpr[i] === '+' || sExpr[i] === '-'){
+        }
+    }
+    buildTinyTree(sExpr, sSub);
+};
+function getToken(sExpr, tokenType, sToken="", i=0){
+    switch(tokenType){
+    case 'N':
+        for(i=0,len=sExpr.length;i<len && !isNaN(sExpr[i]);i++){
+            sToken = sToken + sExpr[i];
+        }
+        break;
+    case '(':
+        [sToken, i] = function(sStr, count=1){ // Match right parenthesis
+            for (let i=1,len=sStr.length; i<=len; i++){
+                if(count === 0){
+                    return [sStr.slice(1,i-1),i];
+                }
+                if(sStr[i] === '(') count++;
+                if(sStr[i] === ')') count--;
+            }
+            return ["",-1]; // failed maching TODO throw exception
+        }(sExpr);
+        break;
+    case 'O':
+        sToken = sExpr[i] === "+" || sExpr[i] ==="-" || sExpr[i] === "*" || sExpr[i] ==="/" ? sExpr[i++] : "";
+    default:
+    }
+    return sToken === "" ? [] : [sToken, sExpr.slice(i, sExpr.length)];
+}
+function buildTinyTree(sStr, aNextStates=["N", "("], aResult=[]) {
+    let aNewStates, vOpr, sSub;
+    for (let i = 0; i < aNextStates.length; i++) { // Check Next Possible State
+        let sState = aNextStates[i];
+        [vOpr, sSub] = getToken(sStr, sState);
+        if(vOpr) {
+            if (sState === "O") aNewStates = ["N", "("];  // Operator
+            else {  // Operand
+                aNewStates = ["O"];
+                if (sState === "(") vOpr = buildBTreeWOReg(vOpr);
+                if (aResult.length > 3) {
+                    let [iLen, preOpr,curOpr] = [aResult.length, aResult[aResult.length - 3], aResult[aResult.length - 1]];
+                    if ((curOpr === "*" || curOpr === "/") && (preOpr === "+" || preOpr === "-")) {  //Draw back for high priority operator
+                        vOpr = [aResult[iLen - 2], aResult[aResult.length - 1], vOpr];
+                        aResult = aResult.slice(0, iLen - 2);          // Draw back
+                    } else {
+                        aResult = [aResult.slice(0, iLen - 1), curOpr];  //Promote
+                    }
+                }
+            }
+            aResult.push(vOpr);
+            break; // Match once
+        }
+    }
+    if(!aNewStates) return [];  //not in loop, invalid expression
+    return sSub === "" ? aResult: buildBTreeWOReg(sSub, aNewStates, aResult);
+}
+function LDRCalc(vTree){
+    if(Array.isArray(vTree)){ // Tree Node
+        let [l, op, r] = [LDRCalc(vTree[0]), aTree[1], LDRCalc(aTree[2])];
+        switch(op){
+        case "+": return l + r;
+        case "-": return l - r;
+        case "*": return l * r;
+        case "/": return l / r;
+        default:  return NaN;
+        }
+    } else if(!isNaN(Number(vTree))){ // Number, Leaf
+        return Number(vTree);
+    } else {   //Not interpreted string
+        return buildTinyTree(vTree);
+    }
+}
+
 // Finit Automata
 function FA(sExpr){
 }
@@ -241,6 +390,73 @@ function pf(sExpr, times){
     let start = Date.now();
     for(let i=0; i<times; i++){
         calc(sExpr);
+    }
+    let end = Date.now();
+    console.log("Runtime(ms)`: "+(end-start).toString());
+}
+
+function pf2(fCalc){
+    let sExpr = [
+        "1+1",
+        "5+(2*3)",
+        "3+(2-4*9)",
+        "3*(5-(5-2*(5-(9-(5*(58-8))))))",
+        "3*(8-(5-2*(5-(9-(5*(58-8))))))",
+        "3*(9-(5-2*(5-(9-(5*(58-8))))))",
+        "3*(2-(5-2*(3/5)))",
+        "9+1",
+        "9+(2*3)",
+        "9+(2-4*9)",
+        "9*(5-(5-2*(5-(9-(5*(58-8))))))",
+        "9*(8-(5-2*(5-(9-(5*(58-8))))))",
+        "9*(9-(5-2*(3/5)))",
+        "9*(2-(5-2*(5-(9-(5*(58-8))))))",
+        "8+1",
+        "8+(2*3)",
+        "8+(2-4*9)",
+        "8*(5-(5-2*(5-(9-(5*(58-8))))))",
+        "8*(8-(5-2*(5-(9-(5*(58-8))))))",
+        "8*(9-(5-2*(3/5)))",
+        "8*(2-(5-2*(5-(9-(5*(58-8))))))",
+        "8+1",
+        "8+(2*3)",
+        "8+(2-4*9)",
+        "102*(5-(5-2*(8/5)))",
+        "102*(8-(5-2*(5-(9-(5*(58-8))))))",
+        "102*(9-(5-2*(5-(9-(5*(58-8))))))",
+        "102*(2-(5-2*(5-(9-(5*(58-8))))))",
+        "102+1",
+        "102+(2*3)",
+        "102+(2-4*9)",
+        "102*(5-(5-2*(5-(9-(5*(58-8))))))",
+        "102*(8-(5-2*(5-(9-(5*(58-8))))))",
+        "102*(9-(5-2*(5-(9-(5*(58-8))))))",
+        "102*(2-(5-2*(3/5)))",
+        "102+1",
+        "102+(2*3)",
+        "102+(2-4*9)",
+        "102*(5-(5-2*(5-(9-(5*(58-8))))))",
+        "102*(8-(5-2*(5-(9-(5*(58-8))))))",
+        "102*(9-(5-2*(3/5)))",
+        "102*(2-(5-2*(5-(9-(5*(58-8))))))",
+        "102+1",
+        "102+(2*3)",
+        "102+(2-4*9)",
+        "102*(5-(5-2*(5-(9-(5*(58-8))))))",
+        "102*(8-(5-2*(5-(9-(5*(58-8))))))",
+        "102*(9-(5-2*(3/5)))",
+        "102*(2-(5-2*(5-(9-(5*(58-8))))))",
+        "102+1",
+        "102+(2*3)",
+        "102+(2-4*9)",
+        "102*(5-(5-2*(8/5)))",
+        "102*(8-(5-2*(5-(9-(5*(58-8))))))",
+        "102*(9-(5-2*(5-(9-(5*(58-8))))))",
+        "102*(2-(5-2*(5-(9-(5*(58-8))))))"
+    ];
+    let start = Date.now();
+    for(let i=0; i<sExpr.length; i++){
+        fCalc.apply(null,sExpr);
     }
     let end = Date.now();
     console.log("Runtime(ms)`: "+(end-start).toString());
