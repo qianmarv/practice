@@ -1,27 +1,32 @@
 // Incredental Replace expression
 function xxx(sExp){
     sExp = sExp.replace(/ /g,""); // remove blank
-    var reNum    = /<NUM\>|([\-]?\d+[\.\d+]?)/;
-    var reParen  = /\(\d+([\+\-\*\/]\d+)*\)/; // match inside paren
-    var reMulDiv = /\d+([\*\/]\d+|)/;         // match first * /
-    var rePlsSub = /\d+([\+\-]\d+)/;         // match first + -
+    var reNum    = /DUMMY|\d+[\.\d+]?/;
+    var reParen  = /\((\d+|DUMMY)[\+\-\*\/](\d+|DUMMY)\)/; // match inside paren
+    var reMulDiv = /(\d+|DUMMY)[*/](\d+|DUMMY)/;         // match first * /
+    var rePlsSub = /(\d+|DUMMY)[+-](\d+|DUMMY)/;         // match first + -
+    var vDummy;
     function dummyCalc(sExp){
-        var aNum    = sExp.match( /\d+/g ).map(parseFloat);
         var sOp     = sExp.match( /[\+\-\*\/]/ );
+        var aNum    = sExp.split(sOp);
+        aNum[0] = aNum[0] === 'DUMMY' ? vDummy : Number(aNum[0]);
+        aNum[1] = aNum[1] === 'DUMMY' ? vDummy : Number(aNum[1]);
         try{
             switch(sOp[0]){
-            case "+": return aNum[0] + aNum[1];
-            case "-": return aNum[0] - aNum[1];
-            case "*": return aNum[0] * aNum[1];
-            case "/": return aNum[0] / aNum[1];
-            default:  return NaN;
+            case "+": vDummy = aNum[0] + aNum[1]; break;
+            case "-": vDummy = aNum[0] - aNum[1]; break;
+            case "*": vDummy = aNum[0] * aNum[1]; break;
+            case "/": vDummy = aNum[0] / aNum[1]; break;
+            default:  vDummy = NaN;
             }
         }catch (e){
             return NaN;
         }
+        return 'DUMMY';
     };
-    function calc(/* })(window);*/){
-        return typeof exp === "number" ? exp : calc(function(){
+    function calc(exp){
+        //if(exp === 'DUMMY') exp = vDummy;
+        return typeof exp === "number" || exp === 'DUMMY' ? exp : calc(function(){
             var subExp;
             if(reParen.test(exp)){
                 subExp = exp.replace(reParen, function(v){
@@ -38,11 +43,13 @@ function xxx(sExp){
             } else {
                 return Number(exp);
             }
-            console.log("Temp: " + subExp);
-            return isNaN(Number(subExp)) ? subExp : Number(subExp);
+            return subExp;
+//            console.log("Temp: " + subExp);
+//            return isNaN(Number(subExp)) ? subExp : Number(subExp);
         }());
     };
-    return calc(sExp);
+
+    return calc(sExp) === 'DUMMY' ? vDummy : NaN;
 };
 
 function test(expr){
@@ -223,7 +230,7 @@ function buildSmartTree(sStr, aNextStates=["N", "("], aResult=[]) {
     return sSub === "" ? calculator(aResult[0], aResult[1], aResult[2]): buildSmartTree(sSub, aNewStates, aResult);
 }
 function calc3(sExpr){
-    console.log(buildSmartTree(sExpr.replace(/ /g,"")));
+    buildSmartTree(sExpr.replace(/ /g,""));
 }
 
 function buildBTreeWOReg(sStr, aNextStates=["N", "("], aResult=[]) {
@@ -254,7 +261,7 @@ function buildBTreeWOReg(sStr, aNextStates=["N", "("], aResult=[]) {
     return sSub === "" ? aResult: buildBTreeWOReg(sSub, aNewStates, aResult);
 }
 function calc2(sExpr){
-    console.log(LDR(buildBTreeWOReg(sExpr.replace(/ /g,""))));
+    LDR(buildBTreeWOReg(sExpr.replace(/ /g,"")));
 }
 
 function LDRDraw(aTree, iDeepth = 0){
@@ -454,10 +461,10 @@ function pf2(fCalc){
         "102*(9-(5-2*(5-(9-(5*(58-8))))))",
         "102*(2-(5-2*(5-(9-(5*(58-8))))))"
     ];
-    let start = Date.now();
+
+    console.time('Marvin');
     for(let i=0; i<sExpr.length; i++){
         fCalc.apply(null,sExpr);
     }
-    let end = Date.now();
-    console.log("Runtime(ms)`: "+(end-start).toString());
+    console.timeEnd('Marvin');
 }
