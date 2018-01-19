@@ -57,6 +57,9 @@ my-data
 
 (jiralib-do-jql-search jql 10 my-jira-get-issue-list-callback)
 
+
+(setq jiralib-url "https://sapjira.wdf.sap.corp:443")
+
 (jiralib-call "getIssuesFromJqlSearch" nil jql 10)
 
 (jiralib-do-jql-search jql nil )
@@ -524,3 +527,28 @@ See`org-jira-get-issue-list'"
       (json-read-from-string
        "{\"People\": {\"name\":\"Jack\", \"age\":18}}"))
 (assoc 'name (cdr (assoc  'People test-json-data)))
+
+;; Test - 2018-01-11
+(setq jiralib-url "https://sapjira.wdf.sap.corp:443")
+(defvar my-callback
+  (cl-function
+   (lambda (&rest data &allow-other-keys)
+     "Callback for async, DATA is the response from the request call."
+     ;; (let ((issues (append (cdr (assoc 'issues (cl-getf data :data))) nil)))
+     (let ((issues (cl-getf data :data)))
+       (save-excursion
+         (progn
+           (switch-to-buffer-other-window "*debug-log*")
+           (erase-buffer)
+           (goto-char (point-min))
+           (insert "Issue:\n")
+           (insert (format "%s" issues))))))))
+
+
+(setq jiralib-token nil)
+
+(jiralib-call "getIssuesByProject" my-callback "CCONS" 10) 
+
+(jiralib-call "getIssuesFromJqlSearch" my-callback "assignee = currentUser() and resolution = unresolved and project = CCONS")
+
+
