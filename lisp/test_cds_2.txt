@@ -1,0 +1,316 @@
+@AbapCatalog.sqlViewName: 'PCCFNDNWITHRPT'
+@AbapCatalog.compiler.compareFilter: true
+@VDM.viewType: #COMPOSITE
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@VDM.private:true
+@ClientHandling.algorithm: #SESSION_VARIABLE
+define view P_CnsldtnFndnWithRptRule
+  with parameters
+    P_CnsldtnRptgItmHier : fincs_rihry
+  as select from    I_CnsldtnFndnCube       as cube
+    left outer join I_CnsldtnRptgItemAssgmt as RIASSGMT on  cube.CnsldtnChartOfAccounts   =       RIASSGMT.CnsldtnChartOfAccounts
+                                                        and RIASSGMT.CnsldtnRptgItmHier   =       :P_CnsldtnRptgItmHier
+                                                        and cube.CnsldtnFinStmntItm       between RIASSGMT.CnsldtnFinStmntItmLowrBndry and RIASSGMT.CnsldtnFinStmntItmUprBndry
+                                                        and cube.CnsldtnFinStmntSubItmCat =       RIASSGMT.CnsldtnFinStmntSubItmCat
+                                                        and cube.CnsldtnFinStmntSubItm    between RIASSGMT.CnsldtnSubItmLowrBndry and RIASSGMT.CnsldtnSubItmUprBndry
+  //  association [0..*] to I_CnsldtnRptgItemAssgmt as _RptgItemAssgmt
+  //            on  $projection.CnsldtnChartOfAccounts    = _RptgItemAssgmt.CnsldtnChartOfAccounts
+  //            and $projection.CnsldtnFinStmntItm        between _RptgItemAssgmt.CnsldtnFinStmntItmLowrBndry and _RptgItemAssgmt.CnsldtnFinStmntItmUprBndry
+  //            and $projection.CnsldtnFinStmntSubItmCat  = _RptgItemAssgmt.CnsldtnFinStmntSubItmCat
+  //            and $projection.CnsldtnFinStmntSubItm     between _RptgItemAssgmt.CnsldtnSubItmLowrBndry and _RptgItemAssgmt.CnsldtnSubItmUprBndry
+
+{
+
+  @ObjectModel.foreignKey.association: '_Ledger'
+  CnsldtnLedger,
+
+  @ObjectModel.foreignKey.association: '_Dimension'
+  CnsldtnDimension,
+
+  @Semantics.fiscal.year: true
+  FiscalYear,
+
+  CnsldtnDocumentNumber,
+
+  CnsldtnPostingItem,
+
+  GLRecordType,
+
+  @ObjectModel.foreignKey.association: '_Version'
+  CnsldtnVersion,
+
+  @Semantics.currencyCode:true
+  @ObjectModel.foreignKey.association: '_TransactionCurrency'
+  TransactionCurrency,
+
+  @Semantics.currencyCode:true
+  @ObjectModel.foreignKey.association: '_LocalCurrency'
+  CnsldtnLocalCurrency,
+
+  @Semantics.currencyCode:true
+  @ObjectModel.foreignKey.association: '_GroupCurrency'
+  CnsldtnGroupCurrency,
+
+  @Semantics.unitOfMeasure: true
+  @ObjectModel.foreignKey.association: '_BaseUnit'
+  BaseUnit,
+
+  @Semantics.fiscal.period: true
+  FiscalPeriod,
+
+  @ObjectModel.foreignKey.association: '_DocumentType'
+  CnsldtnDocumentType,
+
+  @ObjectModel.foreignKey.association: '_DebitCreditCode'
+  DebitCreditCode,
+
+  @ObjectModel.foreignKey.association: '_Company'
+  Company,
+
+  @ObjectModel.foreignKey.association: '_CnsldtnUnit'
+  CnsldtnUnit,
+
+  @ObjectModel.foreignKey.association: '_ChartOfAccounts'
+  cube.CnsldtnChartOfAccounts,
+
+  @ObjectModel.foreignKey.association: '_FinStmntItm'
+  cube.CnsldtnFinStmntItm,
+
+  @ObjectModel.foreignKey.association: '_PartnerUnit'
+  CnsldtnPartnerUnit,
+
+  @ObjectModel.foreignKey.association: '_CnsldtnGroup'
+  CnsldtnGroup,
+
+  @ObjectModel.foreignKey.association: '_CompanyCode'
+  CompanyCode,
+
+  @ObjectModel.foreignKey.association: '_SubItemCategory'
+  cube.CnsldtnFinStmntSubItmCat,
+
+  @ObjectModel.foreignKey.association: '_SubItem'
+  cube.CnsldtnFinStmntSubItm,
+
+  @ObjectModel.foreignKey.association: '_PostingLevel'
+  CnsldtnPostingLevel,
+
+  @ObjectModel.foreignKey.association: '_Apportionment'
+  CnsldtnApportionment,
+
+  @ObjectModel.foreignKey.association: '_CrcyCnvrsnDiffType'
+  CnsldtnCrcyCnvrsnDiffType,
+
+  @Semantics.fiscal.year: true
+  CnsldtnAcquisitionYear,
+
+  @Semantics.fiscal.period: true
+  CnsldtnAcquisitionPeriod,
+
+  @ObjectModel.foreignKey.association: '_InvesteeUnit'
+  CnsldtnInvesteeUnit,
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Measures
+  /////////////////////////////////////////////////////////////////////////////
+  @DefaultAggregation: #SUM
+  @Semantics: { amount : {currencyCode: 'TransactionCurrency'} }
+  cast( case
+        when CnsldtnReverseSign = 'X' then -1 * AmountInTransactionCurrency
+        else AmountInTransactionCurrency
+        end as vtcur12 )                              as AmountInTransactionCurrency,
+
+  @DefaultAggregation: #SUM
+  @Semantics: { amount : {currencyCode: 'CnsldtnLocalCurrency'} }
+  cast( case
+        when CnsldtnReverseSign = 'X' then  -1 * AmountInCnsldtnLocalCrcy
+        else AmountInCnsldtnLocalCrcy
+        end as vlcur12 )                                as AmountInCnsldtnLocalCrcy,
+
+  @DefaultAggregation: #SUM
+  @Semantics.amount.currencyCode: 'CnsldtnGroupCurrency'
+  cast( case
+        when CnsldtnReverseSign = 'X' then  -1 * AmountInCnsldtnGroupCrcy
+        else AmountInCnsldtnGroupCrcy
+        end as vgcur12 )                                as AmountInCnsldtnGroupCrcy,
+
+  @DefaultAggregation: #SUM
+  @Semantics.quantity.unitOfMeasure: 'BaseUnit'
+  QuantityInBaseUnit,
+
+  DocumentItemText,
+
+  CnsldtnIsAutoPosting,
+
+  CnsldtnBusinessTransactionType,
+
+  PostingDate,
+
+  CnsldtnCrcyTranslationDate,
+
+  CnsldtnRefAcctgDocument,
+
+  CnsldtnRefFiscalYear,
+
+  CnsldtnRefAcctgDocItem,
+
+  CnsldtnRefDocumentType,
+
+  CnsldtnRefBusTransType,
+
+  CreationDate,
+
+  CreationTime,
+
+  UserID,
+
+  CnsldtnReverseDocument,
+
+  CnsldtnReversedDocument,
+
+  CnsldtnInvmtActivityType,
+
+  CnsldtnInvmtActivity,
+
+  CnsldtnDocReversalYear,
+
+  ReferenceDocumentType,
+
+  ReferenceDocumentContext,
+
+  LogicalSystem,
+
+  @ObjectModel.foreignKey.association: '_GLChartOfAccounts'
+  ChartOfAccounts,
+
+  @ObjectModel.foreignKey.association: '_GLAccountInChartOfAccounts'
+  GLAccount,
+
+  AssignmentReference,
+
+  CostCenter,
+
+  ProfitCenter,
+
+  FunctionalArea,
+
+  BusinessArea,
+
+  ControllingArea,
+
+  Segment,
+
+  PartnerCostCenter,
+
+  PartnerProfitCenter,
+
+  PartnerFunctionalArea,
+
+  PartnerBusinessArea,
+
+  PartnerCompany,
+
+  PartnerSegment,
+
+  @ObjectModel.foreignKey.association: '_InternalOrder'
+  OrderID,
+
+  @ObjectModel.foreignKey.association: '_Customer'
+  Customer,
+
+  @ObjectModel.foreignKey.association: '_Supplier'
+  Supplier,
+
+  @ObjectModel.foreignKey.association: '_Material'
+  Material,
+
+  @ObjectModel.foreignKey.association: '_Plant'
+  Plant,
+
+  @ObjectModel.foreignKey.association: '_FinancialTransactionType'
+  FinancialTransactionType,
+
+  @ObjectModel.foreignKey.association: '_WBSElementInternalID'
+  WBSElementInternalID,
+
+  @ObjectModel.foreignKey.association: '_WBSElement'
+  WBSElement,
+
+  @ObjectModel.foreignKey.association: '_Project'
+  Project,
+
+  CnsldtnRecordNumber,
+
+  RIASSGMT.CnsldtnRptgItm,
+
+  //  RIASSGMT.CnsldtnReverseSign,
+
+  _Ledger,
+
+  _Dimension,
+
+  _Version,
+
+  _Company,
+
+  _CnsldtnUnit,
+
+  _CnsldtnGroup,
+
+  //  _RptgItm,
+
+  _ChartOfAccounts,
+
+  _FinStmntItm,
+
+  _GLAccountInChartOfAccounts,
+
+//  _GLAccountInCompanyCode,
+
+  _GLChartOfAccounts,
+
+  _PartnerUnit,
+
+  _CompanyCode,
+
+  _SubItemCategory,
+
+  _SubItem,
+
+  _DebitCreditCode,
+
+  _DocumentType,
+
+  _PostingLevel,
+
+  _InvesteeUnit,
+
+  _Apportionment,
+
+  _CrcyCnvrsnDiffType,
+
+  _TransactionCurrency,
+
+  _LocalCurrency,
+
+  _GroupCurrency,
+
+  _BaseUnit,
+
+  _InternalOrder,
+
+  _Customer,
+
+  _Supplier,
+
+  _Material,
+
+  _Plant,
+
+  _FinancialTransactionType,
+
+  _WBSElement,
+
+  _WBSElementInternalID,
+
+  _Project
+}

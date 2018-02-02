@@ -1,0 +1,407 @@
+@AbapCatalog.sqlViewName: 'CCSTOTALSRR01Q'
+@EndUserText.label: 'Data Analysis – Reporting Logic'
+@VDM.viewType: #CONSUMPTION
+@Analytics.query: true
+@AccessControl.authorizationCheck: #PRIVILEGED_ONLY
+@ClientHandling.algorithm: #SESSION_VARIABLE
+@AbapCatalog.buffering.status: #NOT_ALLOWED
+@Metadata.ignorePropagatedAnnotations: true
+@ObjectModel.usageType.sizeCategory: #XL
+@ObjectModel.usageType.serviceQuality: #D
+@ObjectModel.usageType.dataClass: #MIXED
+
+define view C_CnsldtdTotals01Q
+ with parameters
+ @AnalyticsDetails.query.variableSequence : 02
+ @Consumption.derivation: { lookupEntity: 'I_CnsldtnGlobalParameter',
+ resultElement: 'CnsldtnChartOfAccounts'
+ }
+ P_CnsldtnChartOfAccounts : fc_itclg,
+
+ @AnalyticsDetails.query.variableSequence : 03
+ @Consumption.derivation: { lookupEntity: 'I_CnsldtnGlobalParameter',
+ resultElement: 'FiscalYear'
+ }
+ P_FiscalYear : ryear,
+
+ @AnalyticsDetails.query.variableSequence : 04
+ @Consumption.derivation: { lookupEntity: 'I_CnsldtnGlobalParameter',
+ resultElement: 'FiscalPeriod'
+ }
+ P_FiscalPeriod : poper,
+
+ @Consumption.derivation: { lookupEntity: 'I_CnsldtnGlobalParameter',
+ resultElement: 'CnsldtnLedger'
+ }
+ @Consumption.hidden: true
+ P_CnsldtnLedger : rldnr,
+
+ @Consumption.derivation: { lookupEntity: 'I_CnsldtnGlobalParameter',
+ resultElement: 'CnsldtnDimension'
+ }
+
+ @Consumption.hidden: true
+ P_CnsldtnDimension : fc_dimen
+
+ as select from I_CnsldtnFndnCube
+{
+
+ ///////////////////////////////////////////////////////////////////////////////
+ // Filter/ Fixed Rows
+ ///////////////////////////////////////////////////////////////////////////////
+ //@Consumption.filter: {selectionType: #SINGLE, multipleSelections: false, mandatory: false}
+ //@Consumption.derivation: { lookupEntity: 'I_CnsldtnGlobalParameter',
+ // resultElement: 'CnsldtnLedger'
+ // }
+ //@AnalyticsDetails.query.variableSequence : 10
+ //@AnalyticsDetails.query.axis: #FREE
+ ////@Output.labelElement: 'Ledger'
+ //@Consumption.hidden: true
+ //CnsldtnLedger,
+ //_Ledger._Text[1:Language = $parameters.P_Language].CnsldtnLedgerName,
+
+ //@Consumption.filter: {selectionType: #SINGLE, multipleSelections: false, mandatory: false, hidden:true}
+ //@AnalyticsDetails.query.variableSequence : 20
+ //@AnalyticsDetails.query.axis: #FREE
+ //@Consumption.derivation: { lookupEntity: 'I_CnsldtnGlobalParameter',
+ // resultElement: 'CnsldtnDimension'
+ // }
+
+ //@Consumption.hidden: true
+ //CnsldtnDimension,
+ //_Dimension._Text[1:Language = $parameters.P_Language].CnsldtnDimensionText,
+
+
+ @Consumption.filter: {selectionType: #SINGLE, multipleSelections: false, mandatory: true}
+ @AnalyticsDetails.query.variableSequence : 01
+ @AnalyticsDetails.query.axis: #FREE
+ @Consumption.derivation: { lookupEntity: 'I_CnsldtnGlobalParameter',
+ resultElement: 'CnsldtnVersion'
+ }
+ CnsldtnVersion,
+ //_Version._Text[1:Language = $parameters.P_Language].VersionName,
+
+
+ //@Consumption.filter: {selectionType: #SINGLE, multipleSelections: false, mandatory: true}
+ //@AnalyticsDetails.query.variableSequence : 40
+ //@AnalyticsDetails.query.axis: #FREE
+ //@Consumption.derivation: { lookupEntity: 'I_CnsldtnGlobalParameter',
+ // resultElement: 'CnsldtnChartOfAccounts'
+ // }
+
+ // @AnalyticsDetails.query.axis: #FREE
+ // CnsldtnChartOfAccounts,
+ //_ChartOfAccounts._Text[1:Language = $parameters.P_Language].CnsldtnChartOfAccountsText,
+
+
+ //@Consumption.filter: {selectionType: #SINGLE, multipleSelections: true, mandatory: true}
+ //@AnalyticsDetails.query.variableSequence : 50
+ //@Consumption.derivation: { lookupEntity: 'I_CnsldtnGlobalParameter',
+ // resultElement: 'FiscalYear'
+ // }
+
+ @AnalyticsDetails.query.axis: #FREE
+ FiscalYear,
+
+ //@Consumption.filter: {selectionType: #RANGE, multipleSelections: true, mandatory: false}
+ //@AnalyticsDetails.query.variableSequence : 55
+ @AnalyticsDetails.query.axis: #FREE
+ //@Consumption.derivation: { lookupEntity: 'I_CnsldtnGlobalParameter',
+ // resultElement: 'FiscalPeriod'
+ // }
+ FiscalPeriod,
+
+ @Consumption.filter: {selectionType: #SINGLE, multipleSelections: false, mandatory: true}
+ @AnalyticsDetails.query.variableSequence : 05
+ @AnalyticsDetails.query.axis: #FREE
+ //@Consumption.derivation: { lookupEntity: 'I_CnsldtnGlobalParameter',
+ // resultElement: 'CnsldtnGroup'
+ // }
+ CnsldtnGroup,
+
+
+ @Consumption.filter: {selectionType: #RANGE, multipleSelections: true, mandatory: false}
+ //@Consumption.derivation: { lookupEntity: 'I_CnsldtnGlobalParameter',
+ // resultElement: 'CnsldtnUnit'
+ // }
+ @AnalyticsDetails.query: {
+ variableSequence : 06,
+ axis: #ROWS,
+ totals: #SHOW,
+ display: #KEY
+ }
+ CnsldtnUnit,
+ //_ConsUnit._Text[1:Language = $parameters.P_Language].ConsUnitShortText,
+
+ @Consumption.filter: {
+ selectionType: #RANGE,
+ multipleSelections: true,
+ mandatory: false
+ }
+ @AnalyticsDetails.query: {
+ variableSequence : 07,
+ axis: #ROWS,
+ display: #KEY_TEXT
+ }
+ CnsldtnFinStmntItm,
+
+ @Consumption.filter: {selectionType: #RANGE, multipleSelections: true, mandatory: false}
+ @AnalyticsDetails.query.variableSequence : 08
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.display: #KEY
+ CnsldtnFinStmntSubItmCat,
+
+ @Consumption.filter: {selectionType: #RANGE, multipleSelections: true, mandatory: false}
+ @AnalyticsDetails.query.variableSequence : 09
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.display: #KEY
+ CnsldtnFinStmntSubItm,
+ // CnsldtnSubItemHierNode,
+
+ @Consumption.filter: {selectionType: #RANGE, multipleSelections: true, mandatory: false}
+ @AnalyticsDetails.query.variableSequence : 110
+ @AnalyticsDetails.query.axis: #ROWS
+ @AnalyticsDetails.query.display: #KEY
+ CnsldtnPartnerUnit,
+
+ @Consumption.filter: {selectionType: #RANGE, multipleSelections: true, mandatory: false}
+ @AnalyticsDetails.query.variableSequence : 120
+ @AnalyticsDetails.query.axis: #ROWS
+ @AnalyticsDetails.query.display: #KEY_TEXT
+ CnsldtnPostingLevel,
+
+ //@Consumption.filter: {selectionType: #RANGE, multipleSelections: true, mandatory: false}
+ //@AnalyticsDetails.query.variableSequence : 130
+ //@AnalyticsDetails.query.axis: #FREE
+ //@AnalyticsDetails.query.display: #KEY
+ //CnsldtnApportionment,
+
+ @Consumption.filter: {selectionType: #RANGE, multipleSelections: true, mandatory: false}
+ @AnalyticsDetails.query.variableSequence : 140
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.display: #KEY
+ CnsldtnCrcyCnvrsnDiffType,
+
+
+ @Consumption.filter: {selectionType: #RANGE, multipleSelections: true, mandatory: false}
+ @AnalyticsDetails.query.variableSequence : 150
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.display: #KEY
+ CnsldtnDocumentType,
+
+
+ //@Consumption.filter: {selectionType: #RANGE, multipleSelections: true, mandatory: false}
+ //@AnalyticsDetails.query.variableSequence : 160
+ //@AnalyticsDetails.query.axis: #FREE
+ //@AnalyticsDetails.query.display: #KEY
+ //CnsldtnInvesteeUnit,
+
+ @AnalyticsDetails.query.axis: #COLUMNS
+ @DefaultAggregation: #SUM
+ @Semantics.amount.currencyCode: 'TransactionCurrency'
+ @Consumption.hidden: false
+ AmountInTransactionCurrency,
+
+ @AnalyticsDetails.query.axis: #COLUMNS
+ @DefaultAggregation: #SUM
+ @Semantics.amount.currencyCode: 'CnsldtnLocalCurrency'
+ @Consumption.hidden: false
+ AmountInCnsldtnLocalCrcy,
+
+ @AnalyticsDetails.query.axis: #COLUMNS
+ @DefaultAggregation: #SUM
+ @Semantics.amount.currencyCode: 'CnsldtnGroupCurrency'
+ @Consumption.hidden: false
+ AmountInCnsldtnGroupCrcy,
+
+ @Consumption.filter: {selectionType: #RANGE, multipleSelections: true, mandatory: false}
+ @AnalyticsDetails.query.variableSequence : 200
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #SHOW
+ @Consumption.hidden: true
+ TransactionCurrency,
+
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #SHOW
+ CnsldtnLocalCurrency,
+
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #SHOW
+ CnsldtnGroupCurrency,
+
+ @Consumption.filter: {selectionType: #RANGE, multipleSelections: true, mandatory: false}
+ @AnalyticsDetails.query.variableSequence : 220
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #SHOW
+ BaseUnit,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ ChartOfAccounts,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ GLAccount,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ AssignmentReference,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ CostCenter,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ ProfitCenter,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ FunctionalArea,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ BusinessArea,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ ControllingArea,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ Segment,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ PartnerCostCenter,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+
+ PartnerProfitCenter,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ PartnerFunctionalArea,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ PartnerBusinessArea,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ PartnerCompany,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ PartnerSegment,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ OrderID,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ Customer,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ Supplier,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ Material,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ Plant,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ FinancialTransactionType,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ WBSElementInternalID,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ WBSElement,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ Project,
+ 
+ /*** 1802CE: Begin Of Additional Fields in Consolidation Journal Entries in S/4 ***/
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE 
+ BillingDocumentType,
+ 
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ SalesOrganization,
+ 
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ DistributionChannel,
+ 
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ OrganizationDivision,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ MaterialGroup,
+  
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE 
+ SoldProduct,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ SoldProductGroup,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ CustomerGroup,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ CustomerSupplierCountry,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ CustomerSupplierIndustry,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ SalesDistrict,
+
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE  
+ BillToParty,
+ 
+ @AnalyticsDetails.query.axis: #FREE
+ @AnalyticsDetails.query.totals: #HIDE
+ ShipToParty,
+
+
+ @AnalyticsDetails.query.variableSequence : 999
+ @Consumption.filter: { selectionType: #SINGLE, multipleSelections: false, mandatory: true,defaultValue: 'R' }
+ @AnalyticsDetails.query.axis: #FREE
+ GLRecordType,
+
+ :P_CnsldtnChartOfAccounts as CnsldtnChartOfAccounts,
+ :P_CnsldtnLedger as CnsldtnLedger,
+ :P_CnsldtnDimension as CnsldtnDimension
+}
+where
+ CnsldtnDimension = $parameters.P_CnsldtnDimension
+ and FiscalYear = $parameters.P_FiscalYear
+ and FiscalPeriod = $parameters.P_FiscalPeriod
+ and CnsldtnChartOfAccounts = $parameters.P_CnsldtnChartOfAccounts
+ and CnsldtnLedger = $parameters.P_CnsldtnLedger
+// and GLRecordType = 'R'
+ ;
