@@ -1,5 +1,4 @@
 (defvar gtnc-map-table)
-
 (setq gtnc-map-table
   '(
     ("CnsldtnChartOfAccounts"  "ConsolidationChartOfAccounts")
@@ -59,7 +58,7 @@
     (back-to-indentation)
     (if (or (looking-at "//")
             (looking-at "association")
-	    (looking-at "resultElement")
+            (looking-at "resultElement")
             (looking-at "@")
             (looking-at "_"))
         t
@@ -76,38 +75,54 @@
     (beginning-of-line)
     (point)))
 
+;; @VDM.viewType: #BASIC
+
 (defconst VDM-CONSUMPTION "#COMSUMPTION")
+
 (defconst VDM-COMPOSITE "#COMPOSITE")
+
 (defconst VDM-BASIC "BASIC")
 
-(defun is-vdm-consumption()
+(defun get-vdm-type ()
   (save-excursion
     (goto-char (point-min))
     (re-search-forward "@VDM.viewType" nil t)
     (if (> (point) (point-min))
         (let ((current-point (point))
               (line-end-point (point-eol)))
-          (re-search-forward "#CONSUMPTION" line-end-point t)
-          (if (> (point) current-point)
-              t
-            nil)
+          (cond ((is-vdm-consumption line-end-point) VDM-CONSUMPTION)
+                ((is-vdm-composite line-end-point) VDM-COMPOSITE)
+                ((is-vdm-basic line-end-point) VDM-BASIC)
+                (nil))
           )
       nil)
     ))
 
-(is-vdm-consumption)
+(defun is-vdm-consumption(end)
+  (save-excursion
+    (if (re-search-forward VDM-CONSUMPTION end t)
+        t
+      nil)))
+
+(defun is-vdm-composite(end)
+  (save-excursion
+    (if (re-search-forward VDM-COMPOSITE end t)
+        t
+      nil)))
+
+(defun is-vdm-basic(end)
+  (save-excursion
+    (if (re-search-forward VDM-BASIC end t)
+        t
+      nil)))
 
 
-@VDM.viewType: #CONSUMPTION
-
-(defun add-new-gtnc()
-  (interactive)
+(defun gtnc-handle-composite-view (item-mapping)
   (mapc (lambda (item)
           (let ((old-gtnc (car item))
-                (new-gtnc (car (cdr item))))
+                (new-gtnc (car (cdr item)))
+                (vdm-type (get-vdm-type)))
             (goto-char (point-min))
-            (if (is-query)
-                (gtnc-handle-query item))
             (let ((where-pos (word-search-forward "where" nil t)))
               ;; Process For Adding Additional
               (while (word-search-forward old-gtnc where-pos t)
@@ -140,8 +155,32 @@
                   ))
               )
             ))
-        gtnc-map-table)
-  )
+        item-mapping))
+
+(defun gtnc-handle-consumption-view (item-mapping)
+  (mapc (lambda (item)
+          (let ((old-gtnc (car item))
+                (new-gtnc (car (cdr item))))
+            (goto-char (point-min))
+            ;; Process For Adding Additional
+            (while (word-search-forward old-gtnc nil t)
+              (progn
+                (if (re-search-forward old-gtnc nil t)
+                    (replace-match new-gtnc))
+                ))
+            ))
+        item-mapping))
+
+(defun add-new-gtnc()
+  (interactive)
+  (let ((vdm-type (get-vdm-type)))
+    (goto-char (point-min))
+
+    (cond ((eq vdm-type VDM-CONSUMPTION) (gtnc-handle-consumption-view))
+          ((eq vdm-type VDM-COMPOSITE) (gtnc-handle-composite-view))
+          ((eq vdm-type VDM-BASIC) (gtnc-handle-basic-view))
+          (nil))
+    ))
 
 
 (defun delete-old-gtnc()
