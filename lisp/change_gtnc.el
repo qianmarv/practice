@@ -8,9 +8,10 @@
     ("CnsldtnUnit"  "ConsolidationUnit")
     ("CnsldtnVersion"  "ConsolidationVersion")
     ("CnsldtnLocalCurrency"  "LocalCurrency")
-    ("CnsldtnGroupCurrency"  "GroupCurrency"
+    ("CnsldtnGroupCurrency"  "GroupCurrency")
     ("CnsldtnPartnerUnit"  "PartnerConsolidationUnit")
     ("CnsldtnGroup"  "ConsolidationGroup")
+    ("CnsldtnFinStmntItm"  "FinancialStatementItem")
     ("CnsldtnFinStmntSubItmCat"  "SubItemCategory")
     ("CnsldtnFinStmntSubItm"  "SubItem")
     ("CnsldtnPostingLevel"  "PostingLevel")
@@ -36,15 +37,32 @@
     ("CnsldtnRefAcctgDocItem"  "RefConsolidationPostingItem")
     ("CnsldtnRefDocumentType"  "RefConsolidationDocumentType")
     ))
-;; Test Below
-;;  (find-valid-old-gtnc "tester")
 
-;; (re-search-forward "tester" nil t)
-;; (evil-paste-after 1)
-;; (evil-paste-after 1)
-;; (beginning-of-line)
-;; (end-of-line) test33
+(defun is-amount-field (fieldname)
+  (member
+   fieldname
+   '(
+     "AmountInCnsldtnLocalCrcy"
+     "AmountInCnsldtnGroupCrcy"
+     )))
 
+(defun duplicate-region (beg end)
+  ;; (interactive)
+  (copy-region-as-kill beg end)
+  (open-line 1)
+  (next-line 1)
+  (yank)
+  )
+(defun duplicate-line()
+  ;; (interactive)
+  (move-beginning-of-line 1)
+  (kill-line)
+  (yank)
+  (open-line 1)
+  (next-line 1)
+  (yank)
+  ;; (previous-line)
+  )
 
 (defun insert-line-above ()
   (interactive)
@@ -53,17 +71,17 @@
   (indent-according-to-mode))
 
 
-(defun is-invalid-field (field-name)
-  (save-excursion
-    (back-to-indentation)
-    (if (or (looking-at "//")
-            (looking-at "association")
-            (looking-at "resultElement")
-            (looking-at "@")
-            (looking-at "_"))
-        t
-      nil
-      )))
+;; (defun is-invalid-field (field-name)
+;;   (save-excursion
+;;     (back-to-indentation)
+;;     (if (or (looking-at "//")
+;;             (looking-at "association")
+;;             (looking-at "resultElement")
+;;             (looking-at "@")
+;;             (looking-at "_"))
+;;         t
+;;       nil
+;;       )))
 
 (defun point-eol()
   (save-excursion
@@ -77,26 +95,11 @@
 
 ;; @VDM.viewType: #BASIC
 
-(defconst VDM-CONSUMPTION "#COMSUMPTION")
+(defconst VDM-CONSUMPTION "#CONSUMPTION")
 
 (defconst VDM-COMPOSITE "#COMPOSITE")
 
 (defconst VDM-BASIC "BASIC")
-
-(defun get-vdm-type ()
-  (save-excursion
-    (goto-char (point-min))
-    (re-search-forward "@VDM.viewType" nil t)
-    (if (> (point) (point-min))
-        (let ((current-point (point))
-              (line-end-point (point-eol)))
-          (cond ((is-vdm-consumption line-end-point) VDM-CONSUMPTION)
-                ((is-vdm-composite line-end-point) VDM-COMPOSITE)
-                ((is-vdm-basic line-end-point) VDM-BASIC)
-                (nil))
-          )
-      nil)
-    ))
 
 (defun is-vdm-consumption(end)
   (save-excursion
@@ -116,88 +119,135 @@
         t
       nil)))
 
-
-(defun gtnc-handle-composite-view (item-mapping)
+(defun gtnc-handle-vdm (vdm-handler)
   (mapc (lambda (item)
-          (let ((old-gtnc (car item))
-                (new-gtnc (car (cdr item)))
-                (vdm-type (get-vdm-type)))
-            (goto-char (point-min))
-            (let ((where-pos (word-search-forward "where" nil t)))
-              ;; Process For Adding Additional
-              (while (word-search-forward old-gtnc where-pos t)
-                (progn
-                  ;; (message (format "Process %s at %s" old-gtnc (point)))
-                  (unless (is-invalid-field old-gtnc)
-                    (insert-line-above)
-                    (next-line -1)
-                    (insert (format "%s," new-gtnc))
+          (let ((old-gfn (car item))
+                (new-gfn (car (cdr item))))
+            (funcall vdm-handler old-gfn new-gfn)
+            ))
+        gtnc-map-table)
+  )
 
-                    ;; (back-to-indentation)
-                    ;; (evil-yank-line (point-bol) (point-eol))
-
-                    ;; (spacemacs/evil-insert-line-above 1)
-                    ;; (evil-line-move -1)
-                    ;; (evil-paste-after 1)
-                    ;; (if (re-search-forward old-gtnc nil t)
-                    ;;     (replace-match new-gtnc))
-
-                    (next-line 2)
-                    (back-to-indentation)
-                    )))
-              (goto-char where-pos)
-              (while (word-search-forward old-gtnc nil t)
-                (progn
-                  (unless (is-invalid-field old-gtnc)
-                    (if (re-search-forward old-gtnc nil t)
-                        (replace-match new-gtnc))
-                    )
-                  ))
+(defun gtnc-handle-composite-view (old-gfn new-gfn)
+  (save-excursion
+    ;; Processing for Projected Field => Should Appear Once Only
+    ;; (re-search-forward "[^_a-z1-9A-Z]Jack\s*,")
+    (let ((prj-end-pos (re-search-forward (format "[^_a-z1-9A-Z]%s\s*," old-gfn) nil t)))
+      (when prj-end-pos
+        (move-beginning-of-line 1)
+        (if (is-amount-field old-gfn)
+            (let ((prj-start-pos (re-search-backward "@DefaultAggregation")))
+              (goto-char prj-end-pos)
+              (duplicate-region prj-start-pos prj-end-pos)
+              ;; Add Deletion Mark
+              (while (> (point) prj-end-pos)
+                (move-end-of-line 1)
+                (insert " //@DeleteAfterwards")
+                (previous-line 1))
+              (goto-char prj-start-pos)
+              (while (word-search-forward old-gfn prj-end-pos t)
+                (replace-match new-gfn))
               )
-            ))
-        item-mapping))
+          ;; Not amount, simply dupliate lines
+          (duplicate-line)
+          (move-end-of-line 1)
+          (insert " //@DeleteAfterwards")
 
-(defun gtnc-handle-consumption-view (item-mapping)
-  (mapc (lambda (item)
-          (let ((old-gtnc (car item))
-                (new-gtnc (car (cdr item))))
-            (goto-char (point-min))
-            ;; Process For Adding Additional
-            (while (word-search-forward old-gtnc nil t)
-              (progn
-                (if (re-search-forward old-gtnc nil t)
-                    (replace-match new-gtnc))
-                ))
-            ))
-        item-mapping))
-
-(defun add-new-gtnc()
-  (interactive)
-  (let ((vdm-type (get-vdm-type)))
+          (previous-line 1)
+          (move-beginning-of-line 1)
+          (while (word-search-forward old-gfn (point-eol) t)
+            (replace-match new-gfn))
+          )
+        )
+      )
+    ;; Replace Inside Annotation
     (goto-char (point-min))
+    (while (re-search-forward
+            (format "'%s'" old-gfn)
+            nil t)
+      (replace-match (format "'%s'" new-gfn))
+      )
 
-    (cond ((eq vdm-type VDM-CONSUMPTION) (gtnc-handle-consumption-view))
-          ((eq vdm-type VDM-COMPOSITE) (gtnc-handle-composite-view))
-          ((eq vdm-type VDM-BASIC) (gtnc-handle-basic-view))
-          (nil))
+    ;; Replace Input Paramter
+    (goto-char (point-min))
+    (while (re-search-forward
+            (format "P_%s" old-gfn)
+            nil t)
+      (replace-match (format "P_%s" new-gfn))
+      )
+
+    ;; Replace Other Existence
+    (goto-char (point-min))
+    (while (word-search-forward old-gfn nil t)
+      (unless (looking-at "\s*,")
+        (replace-match new-gfn)
+      ))
     ))
 
+(defun is-projection-field)
+(defun gtnc-handle-consumption-view (old-gfn new-gfn)
+  (save-excursion
+    ;; Replace Single Field
+    (goto-char (point-min))
+    (while (word-search-forward old-gfn nil t)
+      (replace-match new-gfn)
+      )
+    ;; Replace Input Paramter
+    (goto-char (point-min))
+    (while (re-search-forward
+            (format "P_%s" old-gfn)
+            nil t)
+      (replace-match (format "P_%s" new-gfn))
+      )
+    ;; Replace Inside Annotation
+    (goto-char (point-min))
+    (while (re-search-forward
+            (format "'%s'" old-gfn)
+            nil t)
+      (replace-match (format "'%s'" new-gfn))
+      )
+    ))
 
-(defun delete-old-gtnc()
+(defun add-new-gfn()
   (interactive)
-  (mapc (lambda (item)
-          (progn
-            (goto-char (point-min))
-            (if (search-forward (car item) nil t)
-                (evil-delete-line (point-bol) (point-eol))
-              )))
-        gtnc-map-table)
+  (goto-char (point-min))
+  (re-search-forward "@VDM.viewType" nil t)
+  (if (> (point) (point-min))
+      (let* ((line-end-point (point-eol))
+             (handler (cond ((is-vdm-consumption line-end-point) 'gtnc-handle-consumption-view)
+                            ((is-vdm-composite line-end-point)  'gtnc-handle-composite-view)
+                            ((is-vdm-basic line-end-point) 'gtnc-handle-basic-view )
+                            (t nil)
+                            )))
+        (message (format "handler: %s" handler))
+        (if handler
+            (gtnc-handle-vdm handler)
+          (message "Invalid VDM Type Or VDM Type Not Support!")))
+    (message "Not a VDM!"))
+  )
+
+
+(defun delete-old-gfn()
+  (interactive)
+  (goto-char (point-min))
+  (while (re-search-forward "@DeleteAfterwards" nil t)
+      (move-beginning-of-line 1)
+      (kill-line)
+      (kill-line)
+    )
+  ;; (mapc (lambda (item)
+  ;;         (progn
+  ;;           (goto-char (point-min))
+  ;;           (if (search-forward (car item) nil t)
+  ;;               (evil-delete-line (point-bol) (point-eol))
+  ;;             )))
+  ;;       gtnc-map-table)
   )
 
 ;; (call-interactively 'evil-delete-line)
 ;;(evil-delete-whole-line (line-beginning-position) (line-end-position) t)
 
 
-(global-set-key (kbd "C-x C-9") 'add-new-gtnc)
+(global-set-key (kbd "C-x C-9") 'add-new-gfn)
 
-(global-set-key (kbd "C-x C-1") 'delete-old-gtnc)
+(global-set-key (kbd "C-x C-1") 'delete-old-gfn)
