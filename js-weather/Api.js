@@ -1,5 +1,5 @@
 //import WetherSearch from "./WetherSearch.js";
-var WeatherSearch = require("./WeatherSearch.js");
+var WeatherSearch = require("./WeatherSearch.js").default;
 
 async function run(cityName) {
 

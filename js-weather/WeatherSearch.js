@@ -1,4 +1,4 @@
-var request = require('request');
+import request from "request";
 
 class WeatherSearch {
     constructor() {
@@ -40,5 +40,5 @@ class WeatherSearch {
 WeatherSearch.callNum = 0;
 WeatherSearch.notifyNumEvent = null;
 
-module.exports = WeatherSearch;
+export default WeatherSearch;
 //export default WeatherSearch;
