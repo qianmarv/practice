@@ -1,16 +1,10 @@
-(flycheck-define-generic-checker 'abap
-  "A syntax checker for ABAP using abap-mode"
-  :start #'flycheck-abap--start
-  :verify #'flycheck-abap--verify
-  :modes 'abap-mode
-  ;; :error-filter flycheck-abap-error-filter
-  :predicate #'(lambda()
-                 abap-mode))
 
+  
 (defun flycheck-abap-setup()
   "setup Flycheck abap"
   (interactive)
-  (add-to-list 'flycheck-checkers 'abap))
+  (add-to-list 'flycheck-checkers 'abap)
+  (setq flycheck-check-syntax-automatically '(mode-enabled save)))
 
 (defun flycheck-abap--parse-error (alist checker)
   (let-alist alist
@@ -35,12 +29,25 @@
   (list
    (flycheck-verification-result-new
     :label "ABAP Mode"
-    :message (if abap-mode "enabled" "disabled")
+    :message (if (and abap-mode (abaplib-is-logged))
+                 "enabled"
+               "disabled")
     :face (if abap-mode 'success '(bold warning)))))
 
+(flycheck-define-generic-checker 'abap
+  "A syntax checker for ABAP using abap-mode"
+  :start #'flycheck-abap--start
+  :verify #'flycheck-abap--verify
+  :modes 'abap-mode
+  ;; :error-filter flycheck-abap-error-filter
+  :predicate #'(lambda()
+                 abap-mode))
 
 (defun test()
   (interactive)
   (setq flycheck-mode t)
 
   (setq flycheck-mode nil))
+
+
+(flycheck-abap-setup)
