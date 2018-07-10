@@ -98,7 +98,6 @@ const printQuiz = async function (name, date, quiz) {
     const pos_date = {x: 560, y: 90};
 
     // SVG Start
-    sSVG += `<?xml version="1.0" encoding="UTF-8"?>`
     sSVG += `<svg width="${metadata.width}" height="${metadata.height}">`;
     //Print Name
     sSVG += `<text x="${pos_name.x}" y= "${pos_name.y}" style="font-family:Sans; 
@@ -123,58 +122,12 @@ const printQuiz = async function (name, date, quiz) {
     }
    // SVG End
     sSVG += `</svg>` 
-    return await image.overlayWith(Buffer.from(sSVG))
-               .toBuffer( );
+    await image.overlayWith(Buffer.from(sSVG))
+               .toFile('output.png');
+ 
 }
 
-//
+//            Start Here  
 
-// printProblem(template, name, date);
-const Koa = require('koa');
-const app = new Koa();
-const bodyParser = require('koa-bodyparser')
-
-app.use(bodyParser());
-app.use(async function (ctx ) {
-    // let userInfo = ctx.state.data;
-    let config = ctx.request.query;
-    // let outputfile = "../uploaded/"+userInfo.openId+".png";
-    let maxOperand;
-    config.allowBlank = config.allowBlank === "true" ? true : false;
-    if(config.level === "0"){
-        maxOperand = 20;
-    }else if(config.level === "1"){
-        maxOperand = 100;
-    }
-    let aOperandNum = [];
-
-    if(typeof config.options === "object"){
-        if(config.options.indexOf("0") !== -1){
-            aOperandNum.push(2);
-        }
-        if(config.options.indexOf("1") !== -1){
-            aOperandNum.push(3);
-        }
-    } else {
-        switch (config.options) {
-            case "0":
-                aOperandNum.push(2);
-                break;
-            case "1":
-                aOperandNum.push(2);
-                aOperandNum.push(3);
-                break;
-       }
-    }
-    let quiz = genQuiz(aOperandNum, maxOperand, config.allowBlank);
-    let buf = await printQuiz(config.name, config.date, quiz);
-
-    let filename = encodeURI(config.name) + "_" + config.date + ".png";
-    ctx.set('Content-disposition', 'attachment; filename=' + filename);
-    ctx.set('Content-type', 'image/png')
-    // const fs = require('fs');
-    ctx.body = buf;
-
-});
-
-app.listen(3000);
+let quiz = genQuiz([2,3], 100, true);
+printQuiz('钱煜森', '2018-07-10', quiz);
