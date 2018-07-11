@@ -1,9 +1,8 @@
 const sharp = require('sharp');
 const path = require("path");
-const text2svg = require('text-to-svg');
 
 // const FONT_ZH_32_BLACK = path.join(__dirname, './resources/fonts/Yahei_32_Black/Yahei.fnt');
-const TEMPLATE_A4 = path.join(__dirname, "./resources/template/Template_A4.png");
+const TEMPLATE_A4 = path.join(__dirname, "../resources/template/Template_A4.png");
 
 function getRandNum(max, min) {
     min = min === undefined ? 5 : min;
@@ -99,12 +98,13 @@ const printQuiz = async function (name, date, quiz) {
     const pos_date = {x: 560, y: 90};
 
     // SVG Start
+    sSVG += `<?xml version="1.0" encoding="UTF-8"?>`
     sSVG += `<svg width="${metadata.width}" height="${metadata.height}">`;
     //Print Name
-    sSVG += `<text x="${pos_name.x}" y= "${pos_name.y}" style="font-family:Sans; 
+    sSVG += `<text x="${pos_name.x}" y= "${pos_name.y}" style="font-family:SimSun; 
                                           font-size: 32px;">${name}</text>`
     //Print Date
-    sSVG += `<text x="${pos_date.x}" y= "${pos_date.y}" style="font-family:Sans; 
+    sSVG += `<text x="${pos_date.x}" y= "${pos_date.y}" style="font-family:SimSun; 
                                           font-size: 32px;">${date}</text>`
 
    //Print Quiz
@@ -123,38 +123,66 @@ const printQuiz = async function (name, date, quiz) {
     }
    // SVG End
     sSVG += `</svg>` 
-    await image.overlayWith(Buffer.from(sSVG))
-               .toFile('output.png');
- 
+    return await image.overlayWith(Buffer.from(sSVG))
+               .toBuffer( );
 }
 
-//            Start Here  
-// let quiz = genQuiz([2,3], 100, true);
-// printQuiz('钱煜森', '2018-07-10', quiz);
+//
 
-const testSVG = async function () {
-    const image = sharp(TEMPLATE_A4);
-    // const metadata = await image.metadata();
-    const textToSVG = text2svg.loadSync();
+async function post(ctx, next) {
+}
 
-    const attributes = {
-        fill: 'blank',
-        // stroke: 'black'
-    };
-    const options = {
-        x: 0,
-        y: 0,
-        fontSize: 48,
-        anchor: 'top',
-        attributes: attributes
-    };
+async function get(ctx ) {
+//    if (ctx.state.$wxInfo.loginState === 1) {
+//         // loginState 为 1，登录态校验成功
+//         ctx.state.data = ctx.state.$wxInfo.userinfo
+    // } else {
+        // ctx.state.code = -1
+        // return;
+    // }
 
-    const sSVG= textToSVG.getSVG('18 - 55 - (        ) = 88', options);
+    // let userInfo = ctx.state.data;
+    let config = ctx.request.query;
+    // let outputfile = "../uploaded/"+userInfo.openId+".png";
+    let maxOperand;
+    config.allowBlank = config.allowBlank === "true" ? true : false;
+    if(config.level === "0"){
+        maxOperand = 20;
+    }else if(config.level === "1"){
+        maxOperand = 100;
+    }
+    let aOperandNum = [];
 
-    await image.overlayWith(Buffer.from(sSVG))
-               .toFile('output.png');
- 
+    if(typeof config.options === "object"){
+        if(config.options.indexOf("0") !== -1){
+            aOperandNum.push(2);
+        }
+        if(config.options.indexOf("1") !== -1){
+            aOperandNum.push(3);
+        }
+    } else {
+        switch (config.options) {
+            case "0":
+                aOperandNum.push(2);
+                break;
+            case "1":
+                aOperandNum.push(2);
+                aOperandNum.push(3);
+                break;
+       }
+    }
+    let quiz = genQuiz(aOperandNum, maxOperand, config.allowBlank);
+    let buf = await printQuiz(config.name, config.date, quiz);
+
+    let filename = encodeURI(config.name) + "_" + config.date + ".png";
+    ctx.set('Content-disposition', 'attachment; filename=' + filename);
+    ctx.set('Content-type', 'image/png')
+    // const fs = require('fs');
+    ctx.body = buf;
 
 }
 
-testSVG();
+module.exports = {
+    get,
+    post
+}
