@@ -1,5 +1,5 @@
 const TencentAI = require('tencent-ai-nodejs-sdk')
-const tencentAi = new TencentAI('<id>','<key>')
+const tencentAi = new TencentAI('2112331549','btPqKGF9i6MQAuAR')
 
 const fs = require('fs')
 
@@ -10,10 +10,10 @@ async function wordseg(){
 }
 
 async function asrTest(){
-  const voice = fs.readFileSync('./assets/output.pcm')
+  const voice = fs.readFileSync('./assets/output2.wav')
   let voiceBase64 = Buffer.from(voice);
   const data   = voiceBase64.toString('base64')
-  const result    = await tencentAi.aaiAsr(data, 1)
+  const result    = await tencentAi.aaiAsr(data, 2)
   console.log(result)
 }
 

@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "baidu-aip-sdk": "^2.3.9",
+    "npm": "^6.8.0",
     "tencent-ai-nodejs-sdk": "^1.0.13"
   }
 }
