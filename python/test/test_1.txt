@@ -1,0 +1,5 @@
+{"a": "Mozilla/5.0 (Windows NT 6.1; WOW64)","c":"US","nk":1,"tz":"America/New York"}
+{"b": "Mozilla/5.0 (Windows NT 6.1; WOW64)","c":"US","nk":1,"tz":"America/Denver"}
+{"c": "Mozilla/5.0 (Windows NT 6.1; WOW64)","c":"US","nk":1,"tz":"America/San Paulo"}
+{"d": "Mozilla/5.0 (Windows NT 6.1; WOW64)","c":"US","nk":1,"tz":"America/Denver"}
+{"e": "Mozilla/5.0 (Windows NT 6.1; WOW64)","c":"US","nk":1}
